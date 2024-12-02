@@ -1,0 +1,26 @@
+{
+  "version": 4,
+  "include": [
+    "base/base.json"
+  ],
+  "configurePresets": [
+    {
+      "name": "wasm32-vcpkg-local",
+      "displayName": "wasm32-emscripten Ninja, using local vcpkg",
+      "inherits": ["vcpkg-local"],
+      "generator": "Ninja",
+      "environment": {"VCPKG_TARGET_TRIPLET": "wasm32-emscripten"},
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "wasm32-vcpkg-local",
+      "configurePreset": "wasm32-vcpkg-local",
+      "displayName": "Build preset for wasm32-vcpkg-local"
+    }
+  ]
+}
