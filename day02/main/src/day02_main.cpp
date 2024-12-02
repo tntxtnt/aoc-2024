@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
         ifs.clear();
         ifs.seekg(0);
         const auto res2 = sol.part2(ifs);
-        fmt::println("day02 - part 1: {}", fmt::styled(res2, fmt::fg(fmt::color::green)));
+        fmt::println("day02 - part 2: {}", fmt::styled(res2, fmt::fg(fmt::color::green)));
     } else {
         fmt::println(std::cerr, "{}",
                      fmt::styled("Input file doesn't exists or can't be read", fmt::fg(fmt::color::red)));

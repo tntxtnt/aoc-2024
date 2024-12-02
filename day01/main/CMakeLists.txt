@@ -1,11 +1,13 @@
 add_executable(${MAIN} src/${DAY}_main.cpp)
 
 find_package(fmt CONFIG REQUIRED)
+find_package(doctest CONFIG REQUIRED)
 
 target_link_libraries(${MAIN}
     PRIVATE
         ${LIB}
         fmt::fmt
+        doctest::doctest
 )
 
 # Enable sanitizers
