@@ -1,5 +1,7 @@
 import sys, shutil, os
 
+YEAR = 2024
+
 def replace_day_num(filename, daynum):
     with open(filename, mode="r", encoding="utf-8") as f:
         lines = f.readlines()
@@ -8,6 +10,7 @@ def replace_day_num(filename, daynum):
     for line in lines:
         line = line.replace('day01', f'day{daynum:02d}')
         line = line.replace('Day1', f'Day{daynum}')
+        if 'AdventOfCodeSession session(' in line: line = f'    AdventOfCodeSession session({YEAR}, {daynum});\n'
         newlines.append(line)
 
     with open(filename, mode="w", encoding="utf-8") as f:
@@ -22,7 +25,6 @@ if __name__ == '__main__':
 
     day = f'day{daynum:02d}'
     shutil.copytree('template', day)
-    os.rename(f'{day}/day01.txt', f'{day}/{day}.txt')
     os.rename(f'{day}/main/src/day01_main.cpp', f'{day}/main/src/{day}_main.cpp')
     os.rename(f'{day}/solution/src/day01_solution.cpp', f'{day}/solution/src/{day}_solution.cpp')
     os.rename(f'{day}/solution/include/day01_solution.h', f'{day}/solution/include/{day}_solution.h')

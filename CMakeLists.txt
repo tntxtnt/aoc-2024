@@ -14,5 +14,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/helpers.cmake)
 find_static_analysis(CLANGTIDY CPPCHECK CPPLINT)
 
 # Executables
+add_subdirectory(aoc_session)
 add_subdirectory(day01)
 add_subdirectory(day02)
+add_subdirectory(day03)

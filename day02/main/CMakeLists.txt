@@ -8,6 +8,7 @@ target_link_libraries(${MAIN}
         ${LIB}
         fmt::fmt
         doctest::doctest
+        aoc_session
 )
 
 # Enable sanitizers
@@ -19,5 +20,5 @@ target_sanitize_options(${MAIN} OPTIONS address undefined leak CONFIGS RelWithDe
 target_fixit(${MAIN})
 
 # Use ${CMAKE_CURRENT_BINARY_DIR} for output dir
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../${DAY}.txt ${CMAKE_CURRENT_BINARY_DIR}/${DAY}.txt COPYONLY)           # re-copy if source changes
+# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../${DAY}.txt ${CMAKE_CURRENT_BINARY_DIR}/${DAY}.txt COPYONLY)           # re-copy if source changes
 # file(COPY ${resource_file_or_dir} DESTINATION ${destination_directory}) # copy only once

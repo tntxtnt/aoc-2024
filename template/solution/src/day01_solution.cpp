@@ -1,4 +1,4 @@
-#include "day01_solution.h"
+#include <day01_solution.h>
 
 
 auto Day1Solution::part1(std::istream& /*is*/) -> Part1ResultType {

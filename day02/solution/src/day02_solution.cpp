@@ -1,4 +1,4 @@
-#include "day02_solution.h"
+#include <day02_solution.h>
 #include <sstream>
 #include <vector>
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include "day01_solution.h"
+#include <day01_solution.h>
 #include <vector>
 #include <algorithm>
 #include <ranges>

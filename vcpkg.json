@@ -1,7 +1,12 @@
 {
   "dependencies": [
-    "fmt",
     "doctest",
-    "sfml"
+    "fmt",
+    {
+      "name": "cpr",
+      "features": [
+        "ssl"
+      ]
+    }
   ]
 }
