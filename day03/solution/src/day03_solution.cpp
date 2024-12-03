@@ -34,29 +34,20 @@ auto Day3Solution::part1(std::istream& is) -> Part1ResultType {
 
 auto Day3Solution::part2(std::istream& is) -> Part2ResultType {
     Part2ResultType res{};
-    bool enabled = true;
     constexpr std::string_view kEnable = "do()";
     constexpr std::string_view kDisable = "don't()";
+    bool enabled = true;
     for (std::string line; std::getline(is, line);) {
         for (std::string_view sv = line; !sv.empty();) {
             if (enabled) {
                 size_t iDisable = sv.find(kDisable);
-                if (iDisable == sv.npos) {
-                    res += doMul(sv);
-                    sv = "";
-                } else {
-                    res += doMul(sv.substr(0, iDisable));
-                    sv = sv.substr(iDisable + kDisable.size());
-                    enabled = false;
-                }
+                res += doMul(sv.substr(0, iDisable));
+                enabled = iDisable == sv.npos;
+                sv = enabled ? "" : sv.substr(iDisable + kDisable.size());
             } else {
                 size_t iEnable = sv.find(kEnable);
-                if (iEnable == sv.npos) {
-                    sv = "";
-                } else {
-                    sv = sv.substr(iEnable + kEnable.size());
-                    enabled = true;
-                }
+                enabled = iEnable != sv.npos;
+                sv = enabled ? sv.substr(iEnable + kEnable.size()) : "";
             }
         }
     }

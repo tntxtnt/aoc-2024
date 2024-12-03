@@ -7,6 +7,20 @@
 #include <fmt/color.h>
 #include <aoc_session.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+void setVirtualTerminal() {
+#ifdef _WIN32
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+#endif
+}
+
 TEST_CASE("day01 - part 1") {
     std::istringstream iss{R"(3   4
 4   3
@@ -36,6 +50,7 @@ TEST_CASE("day01 - part 2") {
 }
 
 int main(int argc, char** argv) {
+    setVirtualTerminal();
     doctest::Context context;
     context.applyCommandLine(argc, argv);
     const int doctestReturnCode = context.run();
@@ -55,7 +70,7 @@ int main(int argc, char** argv) {
             session.checkAnswer(2, std::to_string(res2));
         } else {
             fmt::println(std::cerr, "{}",
-                         fmt::styled("Input file doesn't exists or can't be read", fmt::fg(fmt::color::red)));
+                         fmt::styled("Input file doesn't exists or can't be read", fg(fmt::color::red)));
             returnCode = 1;
         }
     }

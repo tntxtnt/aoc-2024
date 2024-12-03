@@ -4,8 +4,8 @@
 #include <fmt/ostream.h>
 #include <fmt/color.h>
 
-static const std::string kAnswerPrefix = "Your puzzle answer was <code>";
-static const std::string kAnswerPostfix = "</code>";
+constexpr std::string_view kAnswerPrefix = "Your puzzle answer was <code>";
+constexpr std::string_view kAnswerPostfix = "</code>";
 
 static auto getContentInsideTag(const std::string& html, const std::string& tag) -> std::string {
     auto openTag = fmt::format("<{}>", tag);
@@ -41,12 +41,12 @@ static auto getAnswerResult(const std::string& html) -> std::string {
 
 static auto isGoodResponse(const cpr::Response& r) -> bool {
     if (r.status_code == 0) { // failed to verify ssl
-        fmt::println(std::cerr, "{}", fmt::styled("Error: TLS check failed", fmt::fg(fmt::color::red)));
+        fmt::println(std::cerr, "{}", fmt::styled("Error: TLS check failed", fg(fmt::color::red)));
         return false;
     }
     if (r.status_code >= 400) {
-        fmt::println(std::cerr, "{} {}", fmt::styled("Error: GET status code", fmt::fg(fmt::color::red)),
-                     fmt::styled(r.status_code, fmt::fg(fmt::color::red)));
+        fmt::println(std::cerr, "{} {}", fmt::styled("Error: GET status code", fg(fmt::color::red)),
+                     fmt::styled(r.status_code, fg(fmt::color::red)));
         return false;
     }
     return true;
@@ -88,21 +88,24 @@ auto AdventOfCodeSession::checkAnswer(int part, const std::string& answer) -> bo
         }
     }
     // check for answer
-    fmt::println("\n---AoC {} day {} part {}---\n  Your answer is {}", yearNum, dayNum, part,
-                 fmt::styled(answer, fmt::fg(fmt::color::yellow)));
+    fmt::println("-------------------------------------------------------------------------------");
+    using fmt::color;
+    fmt::print("{}", fmt::styled(fmt::format("AoC {} ", yearNum), bg(color::midnight_blue) | fg(color::lime)));
+    fmt::print("{}", fmt::styled(fmt::format("day {} ", dayNum), bg(color::midnight_blue) | fg(color::deep_sky_blue)));
+    fmt::println("{}", fmt::styled(fmt::format("part {}", part), bg(color::midnight_blue) | fg(color::violet)));
+    fmt::println("  Your answer is {}", fmt::styled(answer, fg(color::gold)));
     if (part <= cachedAnswers.size()) { // cached
         auto& correctAns = cachedAnswers[part - 1];
-        fmt::print("  You have solved this before. The answer was {}. New answer is {}.",
-                   fmt::styled(correctAns, fmt::fg(fmt::color::magenta)),
-                   answer == correctAns ? fmt::styled("right", fmt::fg(fmt::color::green))
-                                        : fmt::styled("wrong", fmt::fg(fmt::color::red)));
+        fmt::println("  You have solved this part before. The answer is {}. New answer is {}.",
+                     fmt::styled(correctAns, fg(color::violet)),
+                     answer == correctAns ? fmt::styled("right", fg(color::lime))
+                                          : fmt::styled("wrong", fg(color::red)));
     } else {
         cpr::Response r = cpr::Post(cpr::Url{baseUrl + "/answer"}, cpr::Cookies{{"session", sessionCookie}},
                                     cpr::Payload{{"level", std::to_string(part)}, {"answer", answer}});
         if (!isGoodResponse(r)) return false;
-        fmt::println("  Reply from AoC: {}", getAnswerResult(r.text));
+        fmt::println("  {} {}", fmt::styled("[Reply from AoC]", fg(color::deep_sky_blue)), getAnswerResult(r.text));
     }
-    fmt::println("------------");
     return true;
 }
 
