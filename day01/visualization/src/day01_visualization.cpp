@@ -5,11 +5,9 @@
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
-#include <imgui.h>
-#include <imgui_stdlib.h>
+#include <imgui.h> 
+// #include <imgui_stdlib.h>
 #include <implot.h>
-#define GL_SILENCE_DEPRECATION
-#include <GLFW/glfw3.h>
 
 #include <aoc_session.h>
 #include "constants.h"

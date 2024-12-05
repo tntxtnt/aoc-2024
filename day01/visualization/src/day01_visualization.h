@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 struct Day1Visualization {
