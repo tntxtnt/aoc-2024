@@ -1,12 +1,24 @@
 {
   "dependencies": [
-    "doctest",
-    "fmt",
     {
       "name": "cpr",
       "features": [
         "ssl"
       ]
-    }
+    },
+    "doctest",
+    "fmt",
+    "glfw3",
+    {
+      "name": "imgui",
+      "features": [
+        "freetype",
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "implot",
+    "opengl",
+    "lodepng"
   ]
 }
