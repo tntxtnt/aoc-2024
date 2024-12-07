@@ -2,12 +2,10 @@ set(DAY day05)
 set(MAIN ${DAY}_main)
 set(LIB ${DAY}_lib)
 set(VISUALIZATION ${DAY}_visualization)
-set(WASM ${DAY}_wasm)
 
 add_subdirectory(solution)
 add_subdirectory(main)
 add_subdirectory(visualization)
-add_subdirectory(wasm)
 
 # find_package(fmt CONFIG REQUIRED)
 # target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)

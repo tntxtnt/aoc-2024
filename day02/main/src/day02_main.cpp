@@ -3,6 +3,7 @@
 #include <doctest/doctest.h>
 #include <sstream>
 #include <fstream>
+#include <chrono>
 #include <fmt/ostream.h>
 #include <fmt/color.h>
 #include <aoc_session.h>
@@ -50,6 +51,7 @@ TEST_CASE("day02 - part 2") {
 }
 
 int main(int argc, char** argv) {
+    using namespace std::chrono;
     setVirtualTerminal();
     doctest::Context context;
     context.applyCommandLine(argc, argv);
@@ -61,13 +63,19 @@ int main(int argc, char** argv) {
     if (session.fetchInput()) {
         if (std::ifstream ifs{session.inputFileName}) {
             Day2Solution sol;
+            auto startTime = steady_clock::now();
             const auto res1 = sol.part1(ifs);
+            duration<double, std::milli> elapsed = steady_clock::now() - startTime;
             session.checkAnswer(1, std::to_string(res1));
+            fmt::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
 
             ifs.clear();
             ifs.seekg(0);
+            startTime = steady_clock::now();
             const auto res2 = sol.part2(ifs);
+            elapsed = steady_clock::now() - startTime;
             session.checkAnswer(2, std::to_string(res2));
+            fmt::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
         } else {
             fmt::println(std::cerr, "{}",
                          fmt::styled("Input file doesn't exists or can't be read", fg(fmt::color::red)));
