@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <unordered_map>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -15,7 +14,7 @@ auto Day9Solution::part1(std::istream& is) -> Part1ResultType {
     std::vector<int> blocks;
     for (auto [i, ch] : views::enumerate(input)) {
         const int val = i % 2 == 0 ? (int)i / 2 : -1;
-        for (int repeat = ch - '0'; repeat--;) blocks.push_back(val);
+        blocks.insert(end(blocks), ch - '0', val);
     }
     for (size_t i = 0, j = blocks.size() - 1; i < j;) {
         while (blocks[i] != -1 && i < j && i < blocks.size() && j >= 0) ++i;
@@ -39,7 +38,7 @@ auto Day9Solution::part2(std::istream& is) -> Part2ResultType {
     for (auto [i, ch] : views::enumerate(input)) {
         const int val = i % 2 == 0 ? (int)i / 2 : -1;
         (i % 2 == 0 ? filePockets : spacePockets).emplace_back((int)blocks.size(), ch - '0');
-        for (int repeat = ch - '0'; repeat--;) blocks.push_back(val);
+        blocks.insert(end(blocks), ch - '0', val);
     }
     for (auto [filePocketId, filePocketLen] : views::reverse(filePockets)) {
         for (auto& [spacePocketId, spacePocketLen] : spacePockets) {
