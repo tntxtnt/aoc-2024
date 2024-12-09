@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <array>
+#include <set>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -33,23 +35,34 @@ auto Day9Solution::part2(std::istream& is) -> Part2ResultType {
     std::string input;
     is >> input;
     std::vector<int> blocks;
-    std::vector<std::pair<int, int>> spacePockets;
+    std::array<std::set<int>, 10> spacePockets;
     std::vector<std::pair<int, int>> filePockets;
     for (auto [i, ch] : views::enumerate(input)) {
         const int val = i % 2 == 0 ? (int)i / 2 : -1;
-        (i % 2 == 0 ? filePockets : spacePockets).emplace_back((int)blocks.size(), ch - '0');
+        if (i % 2 == 0) {
+            filePockets.emplace_back((int)blocks.size(), ch - '0');
+        } else if (ch != '0') {
+            spacePockets[ch - '0'].insert((int)blocks.size());
+        }
         blocks.insert(end(blocks), ch - '0', val);
     }
     for (auto [filePocketId, filePocketLen] : views::reverse(filePockets)) {
-        for (auto& [spacePocketId, spacePocketLen] : spacePockets) {
-            if (spacePocketId >= filePocketId) break;
-            if (spacePocketLen >= filePocketLen) {
-                for (size_t i = 0; i < filePocketLen; ++i)
-                    std::swap(blocks[spacePocketId++], blocks[filePocketId + i]);
-                spacePocketLen -= filePocketLen;
-                break;
+        int spacePocketId{-1};
+        int spacePocketLen{-1};
+        for (size_t len = filePocketLen; len < spacePockets.size(); ++len) {
+            if (spacePockets[len].empty()) continue;
+            const int id = *begin(spacePockets[len]);
+            if (id >= filePocketId) continue;
+            if (spacePocketId == -1 || id < spacePocketId) {
+                spacePocketId = id;
+                spacePocketLen = (int)len;
             }
         }
+        if (spacePocketId == -1) continue;
+        spacePockets[spacePocketLen].erase(spacePocketId);
+        for (size_t i = 0; i < filePocketLen; ++i) std::swap(blocks[spacePocketId++], blocks[filePocketId + i]);
+        spacePocketLen -= filePocketLen;
+        if (spacePocketLen > 0) spacePockets[spacePocketLen].insert(spacePocketId);
     }
     Part1ResultType res{};
     for (auto [i, val] : views::enumerate(blocks)) {
