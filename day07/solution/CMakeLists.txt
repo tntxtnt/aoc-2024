@@ -5,8 +5,10 @@ add_library(${LIB}
 )
 target_include_directories(${LIB} PUBLIC include)
 
-find_package(fmt CONFIG REQUIRED)
-target_link_libraries(${LIB} PRIVATE fmt::fmt)
+target_link_libraries(${LIB}
+    PRIVATE
+        AdventOfCode::Utils
+)
 
 # Enable sanitizers
 # If you're getting error LNK2038: mismatch detected for 'annotate_vector': value '0' doesn't match value '1'

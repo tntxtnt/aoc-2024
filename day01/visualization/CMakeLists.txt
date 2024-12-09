@@ -24,8 +24,8 @@ find_package(lodepng CONFIG REQUIRED)
 
 target_link_libraries(${VISUALIZATION}
     PRIVATE
-        fmt::fmt
-        aoc_session
+        AdventOfCode::Session
+        AdventOfCode::Utils
         glfw
         OpenGL::GL
         imgui::imgui

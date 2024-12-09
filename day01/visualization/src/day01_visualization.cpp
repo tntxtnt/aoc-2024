@@ -5,11 +5,12 @@
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
-#include <imgui.h> 
+#include <imgui.h>
 // #include <imgui_stdlib.h>
 #include <implot.h>
 
-#include <aoc_session.h>
+#include <aoc/session.h>
+#include <aoc/utils.h>
 #include "constants.h"
 #include "day01_visualization.h"
 
@@ -17,7 +18,7 @@ Day1Visualization::Day1Visualization() {
     AdventOfCodeSession session(2024, 1);
     if (session.fetchInput()) {
         if (std::ifstream ifs{session.inputFileName}) {
-            for (int n1, n2; ifs >> n1 >> n2;) {
+            for (auto [n1, n2] : views::istream<Pair<int, int>>(ifs)) {
                 list1.push_back(n1);
                 list2.push_back(n2);
             }

@@ -1,14 +1,25 @@
+set(LIB aoc_utils)
 add_library(${LIB}
     STATIC
-        include/${DAY}_solution.h
-        src/${DAY}_solution.cpp
+        include/aoc/utils.h
+        include/aoc/utils/istream_extract.h
+        include/aoc/utils/linewrapper.h
+        src/aoc_utils_linewrapper.cpp
+        include/aoc/utils/print.h
 )
-target_include_directories(${LIB} PUBLIC include)
+target_include_directories(${LIB}
+    PUBLIC include
+)
+
+find_package(fmt CONFIG REQUIRED)
+find_package(nowide CONFIG REQUIRED)
 
 target_link_libraries(${LIB}
-    PRIVATE
-        AdventOfCode::Utils
+    PUBLIC
+        fmt::fmt
+        nowide::nowide
 )
+# target_compile_definitions(${LIB} PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # Enable sanitizers
 # If you're getting error LNK2038: mismatch detected for 'annotate_vector': value '0' doesn't match value '1'

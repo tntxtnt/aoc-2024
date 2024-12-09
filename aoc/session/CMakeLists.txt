@@ -1,16 +1,18 @@
 set(LIB aoc_session)
 add_library(${LIB}
     STATIC
-        include/${LIB}.h
+        include/aoc/session.h
         src/${LIB}.cpp
 )
-target_include_directories(${LIB} PUBLIC include)
+target_include_directories(${LIB}
+    PUBLIC include
+)
 
 find_package(fmt CONFIG REQUIRED)
 find_package(cpr CONFIG REQUIRED)
 
-target_link_libraries(${LIB} 
-    PRIVATE 
+target_link_libraries(${LIB}
+    PRIVATE
         fmt::fmt
         cpr::cpr
 )

@@ -22,9 +22,8 @@ static auto isSafe(const std::vector<int>& v) -> bool {
 auto Day2Solution::part1(std::istream& is) -> Part1ResultType {
     Part1ResultType res{};
     for (std::string line; std::getline(is, line);) {
-        std::vector<int> v;
         std::istringstream iss{line};
-        for (int n; iss >> n;) v.push_back(n);
+        const auto v = ranges::to<std::vector<int>>(views::istream<int>(iss));
         res += (int)isSafe(v);
     }
     return res;
@@ -33,9 +32,8 @@ auto Day2Solution::part1(std::istream& is) -> Part1ResultType {
 auto Day2Solution::part2(std::istream& is) -> Part2ResultType {
     Part2ResultType res{};
     for (std::string line; std::getline(is, line);) {
-        std::vector<int> v;
         std::istringstream iss{line};
-        for (int n; iss >> n;) v.push_back(n);
+        const auto v = ranges::to<std::vector<int>>(views::istream<int>(iss));
         if (isSafe(v)) {
             ++res;
         } else {

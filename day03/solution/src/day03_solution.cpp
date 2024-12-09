@@ -1,11 +1,12 @@
 #include <day03_solution.h>
-
 #include <string>
 #include <iostream>
 #include <algorithm>
 #include <ranges>
 namespace ranges = std::ranges;
+namespace views = std::views;
 #include <cctype>
+#include <aoc/utils.h>
 
 auto isDigit(unsigned char ch) -> bool {
     return std::isdigit(ch);
@@ -28,7 +29,7 @@ static auto doMul(std::string_view sv) -> int {
 
 auto Day3Solution::part1(std::istream& is) -> Part1ResultType {
     Part1ResultType res{};
-    for (std::string line; std::getline(is, line);) res += doMul(line);
+    for (std::string line : views::istream<LineWrapper>(is)) res += doMul(line);
     return res;
 }
 
@@ -37,7 +38,7 @@ auto Day3Solution::part2(std::istream& is) -> Part2ResultType {
     constexpr std::string_view kEnable = "do()";
     constexpr std::string_view kDisable = "don't()";
     bool enabled = true;
-    for (std::string line; std::getline(is, line);) {
+    for (std::string line : views::istream<LineWrapper>(is)) {
         for (std::string_view sv = line; !sv.empty();) {
             if (enabled) {
                 size_t iDisable = sv.find(kDisable);

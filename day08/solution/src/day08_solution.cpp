@@ -6,21 +6,20 @@
 #include <complex>
 #include <cctype>
 #include <ranges>
+namespace ranges = std::ranges;
 namespace views = std::views;
+#include <aoc/utils.h>
 
 using CoordType = std::complex<double>;
 
 auto Day8Solution::part1(std::istream& is) -> Part1ResultType {
+    auto mat = ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(is));
     std::unordered_map<char, std::vector<CoordType>> coordMap;
-    std::vector<std::string> mat;
-    int rows{};
-    int cols{};
-    for (std::string line; is >> line; ++rows) {
-        mat.push_back(line);
-        for (auto [c, ch] : views::enumerate(line))
-            if (std::isalnum(ch)) coordMap[ch].emplace_back((int)c, rows);
-    }
-    cols = (int)mat[0].size();
+    for (auto [r, row] : views::enumerate(mat))
+        for (auto [c, ch] : views::enumerate(row))
+            if (std::isalnum(ch)) coordMap[ch].emplace_back((int)c, (int)r);
+    const int rows{(int)mat.size()};
+    const int cols{(int)mat[0].size()};
     auto setAntinode = [&](CoordType coord) -> bool {
         const int r = (int)coord.imag();
         const int c = (int)coord.real();
@@ -35,16 +34,13 @@ auto Day8Solution::part1(std::istream& is) -> Part1ResultType {
 }
 
 auto Day8Solution::part2(std::istream& is) -> Part2ResultType {
+    auto mat = ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(is));
     std::unordered_map<char, std::vector<CoordType>> coordMap;
-    std::vector<std::string> mat;
-    int rows{};
-    int cols{};
-    for (std::string line; is >> line; ++rows) {
-        mat.push_back(line);
-        for (auto [c, ch] : views::enumerate(line))
-            if (std::isalnum(ch)) coordMap[ch].emplace_back((int)c, rows);
-    }
-    cols = (int)mat[0].size();
+    for (auto [r, row] : views::enumerate(mat))
+        for (auto [c, ch] : views::enumerate(row))
+            if (std::isalnum(ch)) coordMap[ch].emplace_back((int)c, (int)r);
+    const int rows{(int)mat.size()};
+    const int cols{(int)mat[0].size()};
     auto isValidNode = [&](CoordType coord) -> bool {
         const int r = (int)coord.imag();
         const int c = (int)coord.real();

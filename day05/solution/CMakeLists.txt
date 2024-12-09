@@ -3,12 +3,12 @@ add_library(${LIB}
         include/${DAY}_solution.h
         src/${DAY}_solution.cpp
 )
-find_package(fmt CONFIG REQUIRED)
+target_include_directories(${LIB} PUBLIC include)
+
 target_link_libraries(${LIB}
     PRIVATE
-        fmt::fmt
+        AdventOfCode::Utils
 )
-target_include_directories(${LIB} PUBLIC include)
 
 # Enable sanitizers
 # If you're getting error LNK2038: mismatch detected for 'annotate_vector': value '0' doesn't match value '1'

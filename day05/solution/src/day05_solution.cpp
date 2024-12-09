@@ -1,5 +1,4 @@
 #include <day05_solution.h>
-
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -9,12 +8,13 @@
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
-#include <fmt/ranges.h>
+#include <aoc/utils.h>
 
 auto Day5Solution::part1(std::istream& is) -> Part1ResultType {
     std::unordered_map<int, std::unordered_set<int>> orderingAfter;
     char ignore;
-    for (std::string line; std::getline(is, line) && !line.empty();) {
+    for (std::string line : views::istream<LineWrapper>(is)) {
+        if (line.empty()) break;
         std::istringstream iss{line};
         int a;
         int b;
@@ -22,7 +22,7 @@ auto Day5Solution::part1(std::istream& is) -> Part1ResultType {
         orderingAfter[a].insert(b);
     }
     Part1ResultType res{};
-    for (std::string line; std::getline(is, line);) {
+    for (std::string line : views::istream<LineWrapper>(is)) {
         std::istringstream iss{line};
         std::vector<int> v(1);
         iss >> v[0];
@@ -35,7 +35,8 @@ auto Day5Solution::part1(std::istream& is) -> Part1ResultType {
 auto Day5Solution::part2(std::istream& is) -> Part2ResultType {
     std::unordered_map<int, std::unordered_set<int>> orderingAfter;
     char ignore;
-    for (std::string line; std::getline(is, line) && !line.empty();) {
+    for (std::string line : views::istream<LineWrapper>(is)) {
+        if (line.empty()) break;
         std::istringstream iss{line};
         int a;
         int b;
@@ -44,7 +45,7 @@ auto Day5Solution::part2(std::istream& is) -> Part2ResultType {
     }
     auto comp = [&](int a, int b) { return orderingAfter[a].contains(b); };
     Part1ResultType res{};
-    for (std::string line; std::getline(is, line);) {
+    for (std::string line : views::istream<LineWrapper>(is)) {
         std::istringstream iss{line};
         std::vector<int> v(1);
         iss >> v[0];

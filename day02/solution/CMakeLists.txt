@@ -5,6 +5,11 @@ add_library(${LIB}
 )
 target_include_directories(${LIB} PUBLIC include)
 
+target_link_libraries(${LIB}
+    PRIVATE
+        AdventOfCode::Utils
+)
+
 # Enable sanitizers
 # If you're getting error LNK2038: mismatch detected for 'annotate_vector': value '0' doesn't match value '1'
 # either disable sanitizer or rebuild other libraries with sanitizer on. For more information see

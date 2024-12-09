@@ -6,9 +6,9 @@ find_package(doctest CONFIG REQUIRED)
 target_link_libraries(${MAIN}
     PRIVATE
         ${LIB}
-        fmt::fmt
         doctest::doctest
-        aoc_session
+        AdventOfCode::Session
+        AdventOfCode::Utils
 )
 
 # Enable sanitizers

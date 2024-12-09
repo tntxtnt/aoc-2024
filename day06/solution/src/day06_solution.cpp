@@ -1,5 +1,4 @@
 #include <day06_solution.h>
-
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -9,10 +8,10 @@
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
+#include <aoc/utils.h>
 
 auto Day6Solution::part1(std::istream& is) -> Part1ResultType {
-    std::vector<std::string> mat;
-    for (std::string line; std::getline(is, line);) mat.push_back(std::move(line));
+    auto mat = ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(is));
     const int rows = (int)mat.size();
     const int cols = (int)mat[0].size();
     using CoordType = std::complex<double>;
@@ -37,8 +36,7 @@ auto Day6Solution::part1(std::istream& is) -> Part1ResultType {
 }
 
 auto Day6Solution::part2(std::istream& is) -> Part2ResultType {
-    std::vector<std::string> mat;
-    for (std::string line; std::getline(is, line);) mat.push_back(std::move(line));
+    auto mat = ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(is));
     using CoordType = std::complex<double>;
     CoordType start;
     for (auto [r, row] : views::enumerate(mat))
