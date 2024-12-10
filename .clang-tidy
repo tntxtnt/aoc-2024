@@ -16,5 +16,4 @@ CheckOptions:
     value: 2
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle: file

@@ -8,10 +8,13 @@ add_executable(${VISUALIZATION} WIN32
 )
 
 if (WIN32)
-    # /ENTRY:mainCRTStartup keeps the same "main" function instead of requiring "WinMain"
-    set(SUBSYSTEM_LINKER_OPTIONS /ENTRY:mainCRTStartup)
-else()
-    set(SUBSYSTEM_LINKER_OPTIONS "-mwindows")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(SUBSYSTEM_LINKER_OPTIONS /ENTRY:mainCRTStartup)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+        set(SUBSYSTEM_LINKER_OPTIONS /ENTRY:mainCRTStartup)
+    else()
+        set(SUBSYSTEM_LINKER_OPTIONS "-mwindows")
+    endif()
 endif()
 target_link_options(${VISUALIZATION} PRIVATE ${SUBSYSTEM_LINKER_OPTIONS})
 
@@ -36,6 +39,10 @@ target_compile_definitions(${VISUALIZATION}
     PRIVATE
         IMGUI_USER_CONFIG=\"custom_imconfig.h\"
 )
+target_include_directories(${VISUALIZATION}
+    PRIVATE
+        src
+)
 
 # Enable sanitizers
 # If you're getting error LNK2038: mismatch detected for 'annotate_vector': value '0' doesn't match value '1'
@@ -48,4 +55,4 @@ target_fixit(${VISUALIZATION})
 # Use ${CMAKE_CURRENT_BINARY_DIR} for output dir
 # configure_file(${resource_file} ${destination_file} COPYONLY)           # re-copy if source changes
 # file(COPY ${resource_file_or_dir} DESTINATION ${destination_directory}) # copy only once
-file(COPY ${CMAKE_SOURCE_DIR}/static DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
+file(COPY ${CMAKE_SOURCE_DIR}/static DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

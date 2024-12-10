@@ -53,9 +53,9 @@ static auto isGoodResponse(const cpr::Response& r) -> bool {
 }
 
 AdventOfCodeSession::AdventOfCodeSession(int yearNum, int dayNum)
-: yearNum{yearNum},
+: inputFileName{fmt::format("day{:02d}.txt", dayNum)},
+  yearNum{yearNum},
   dayNum{dayNum},
-  inputFileName{fmt::format("day{:02d}.txt", dayNum)},
   baseUrl{fmt::format("https://adventofcode.com/{}/day/{}", yearNum, dayNum)},
   sessionCookie{std::getenv("ADVENTOFCODE_SESSION_COOKIE")} {}
 
@@ -94,7 +94,7 @@ auto AdventOfCodeSession::checkAnswer(int part, const std::string& answer) -> bo
     fmt::print("{}", fmt::styled(fmt::format("day {} ", dayNum), bg(color::midnight_blue) | fg(color::deep_sky_blue)));
     fmt::println("{}", fmt::styled(fmt::format("part {}", part), bg(color::midnight_blue) | fg(color::violet)));
     fmt::println("  Your answer is {}", fmt::styled(answer, fg(color::gold)));
-    if (part <= cachedAnswers.size()) { // cached
+    if (part <= (int)cachedAnswers.size()) { // cached
         auto& correctAns = cachedAnswers[part - 1];
         fmt::println("  You have solved this part before. The answer is {}. New answer is {}.",
                      fmt::styled(correctAns, fg(color::violet)),

@@ -18,9 +18,9 @@ auto Day9Solution::part1(std::istream& is) -> Part1ResultType {
         const int val = i % 2 == 0 ? (int)i / 2 : -1;
         blocks.insert(end(blocks), ch - '0', val);
     }
-    for (size_t i = 0, j = blocks.size() - 1; i < j;) {
-        while (blocks[i] != -1 && i < j && i < blocks.size() && j >= 0) ++i;
-        while (blocks[j] == -1 && i < j && i < blocks.size() && j >= 0) --j;
+    for (int i = 0, j = (int)blocks.size() - 1; i < j;) {
+        while (blocks[i] != -1 && i < j) ++i;
+        while (blocks[j] == -1 && i < j) --j;
         while (blocks[i] == -1 && blocks[j] != -1 && i < j) std::swap(blocks[i++], blocks[j--]);
     }
     Part1ResultType res{};
@@ -60,7 +60,7 @@ auto Day9Solution::part2(std::istream& is) -> Part2ResultType {
         }
         if (spacePocketId == -1) continue;
         spacePockets[spacePocketLen].erase(spacePocketId);
-        for (size_t i = 0; i < filePocketLen; ++i) std::swap(blocks[spacePocketId++], blocks[filePocketId + i]);
+        for (int i = 0; i < filePocketLen; ++i) std::swap(blocks[spacePocketId++], blocks[filePocketId + i]);
         spacePocketLen -= filePocketLen;
         if (spacePocketLen > 0) spacePockets[spacePocketLen].insert(spacePocketId);
     }

@@ -25,6 +25,12 @@ function(target_fix_definitions target_name)
       HAVE_SNPRINTF # https://github.com/nlohmann/json/issues/1408#issuecomment-463953575
       NOMINMAX
   )
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+    target_compile_definitions(${target_name}
+      PRIVATE
+        DOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS
+    )
+  endif()
 endfunction()
 
 function(target_enable_unicode_utf8_source target_name)
@@ -35,10 +41,19 @@ function(target_enable_unicode_utf8_source target_name)
   target_compile_definitions(${target_name} PRIVATE UNICODE)
 endfunction()
 
+function(target_fix_msvcrt target_name)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+    set_property(TARGET ${target_name}
+      PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
+  endif()
+endfunction()
+
 function(target_fixit target_name)
   target_strip_symbols(${target_name})
   target_enable_strict_warnings(${target_name})
   target_fix_definitions(${target_name})
   target_enable_unicode_utf8_source(${target_name})
+  target_fix_msvcrt(${target_name})
   set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${target_name})
 endfunction()
