@@ -4,7 +4,6 @@
 #include <vector>
 #include <sstream>
 #include <limits>
-#include <unordered_set>
 #include <span>
 #include <array>
 #include <tuple>
@@ -17,14 +16,6 @@ struct Point2i {
     int x{};
     int y{};
 };
-
-struct Point2iHash {
-    auto operator()(const Point2i& point) const -> size_t { return ((size_t)point.x << 32) | (size_t)point.y; }
-};
-
-static auto operator==(const Point2i& p, const Point2i& q) -> bool {
-    return p.x == q.x && p.y == q.y;
-}
 
 struct BoundingBox {
     int top{};
@@ -104,15 +95,24 @@ auto Day14Solution::part1(std::istream& inputStream) -> Part1ResultType {
 auto Day14Solution::part2(std::istream& inputStream) -> Part2ResultType {
     auto [positions, velocities, bb] = parseInput(inputStream);
     // Loop
+    std::vector<std::string> mat(bb.height(), std::string(bb.width(), '.'));
     for (int sec : views::iota(1)) {
         for (auto&& [pos, vel] : views::zip(positions, velocities)) {
             pos.x = (pos.x + vel.x + bb.width()) % bb.width();
             pos.y = (pos.y + vel.y + bb.height()) % bb.height();
         }
-        std::unordered_set<Point2i, Point2iHash> set(begin(positions), end(positions));
-        if (set.size() == positions.size()) {
-            std::vector<std::string> mat(bb.height(), std::string(bb.width(), '.'));
-            for (auto& pos : positions) mat[pos.y][pos.x] = '1';
+        for (auto& row : mat) ranges::fill(row, '.');
+        for (auto& pos : positions) mat[pos.y][pos.x] = '*';
+        auto foundXmasTree = [&] {
+            for (int i = 0; i < std::ssize(mat) - 2; ++i)
+                for (int j = 0; j < std::ssize(mat[0]); ++j)
+                    if (std::string_view{mat[i + 0]}.substr(j).starts_with("..*..") &&
+                        std::string_view{mat[i + 1]}.substr(j).starts_with(".***.") &&
+                        std::string_view{mat[i + 2]}.substr(j).starts_with("*****"))
+                        return true;
+            return false;
+        };
+        if (foundXmasTree()) {
             for (auto& row : mat) aoc::println("{}", row);
             aoc::println("^ after {} seconds", sec);
             return sec;
