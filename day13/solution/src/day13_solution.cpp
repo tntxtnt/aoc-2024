@@ -27,16 +27,16 @@ struct Line2i { // ax + by = c
 
 template <Integer T>
 static auto intersection(const Line2i<T>& line1,
-                         const Line2i<T>& line2) -> std::variant<std::nullptr_t, Point2i<T>, Line2i<T>> {
+                         const Line2i<T>& line2) -> std::variant<std::monostate, Point2i<T>, Line2i<T>> {
     const T det = line1.a * line2.b - line1.b * line2.a;
     const T dx = line1.c * line2.b - line1.b * line2.c;
     const T dy = line1.a * line2.c - line1.c * line2.a;
     if (det == 0) {
         if (dx == 0 && dy == 0) return line1;
-        return nullptr;
+        return {};
     }
     if (dx % det == 0 && dy % det == 0) return Point2i<T>{dx / det, dy / det};
-    return nullptr;
+    return {};
 }
 
 template <class... Ts>
@@ -62,7 +62,7 @@ static auto solve(std::istream& inputStream, const T added) -> T {
         Line2i<T> intLine1{extractFirstInt(line1, '+'), extractFirstInt(line2, '+'),
                            extractFirstInt(line3, '=') + added};
         Line2i<T> intLine2{extractLastInt(line1, '+'), extractLastInt(line2, '+'), extractLastInt(line3, '=') + added};
-        std::visit(overloaded{[&](std::nullptr_t) {},                                //
+        std::visit(overloaded{[&](std::monostate) {},                                //
                               [&](const Point2i<T>& pt) { res += 3 * pt.x + pt.y; }, //
                               [&](const Line2i<T>& ln) {
                                   const auto [a, b, c] = ln;
