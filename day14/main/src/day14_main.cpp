@@ -37,9 +37,11 @@ p=7,3 v=-1,2
 p=2,4 v=2,-3
 p=9,5 v=-3,-3
 )"};
+    constexpr int width = 11;
+    constexpr int height = 7;
     const Day14Solution::Part1ResultType ans{12};
     Day14Solution sol;
-    const auto res = sol.part1(iss);
+    const auto res = sol.part1(iss, width, height);
     REQUIRE(res == ans);
 }
 
@@ -69,9 +71,11 @@ int main(int argc, char** argv) {
     AdventOfCodeSession session(2024, 14);
     if (session.fetchInput()) {
         if (std::ifstream ifs{session.inputFileName}) {
+            constexpr int width = 101;
+            constexpr int height = 103;
             Day14Solution sol;
             auto startTime = steady_clock::now();
-            const auto res1 = sol.part1(ifs);
+            const auto res1 = sol.part1(ifs, width, height);
             duration<double, std::milli> elapsed = steady_clock::now() - startTime;
             session.checkAnswer(1, std::to_string(res1));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
@@ -79,7 +83,7 @@ int main(int argc, char** argv) {
             ifs.clear();
             ifs.seekg(0);
             startTime = steady_clock::now();
-            const auto res2 = sol.part2(ifs);
+            const auto res2 = sol.part2(ifs, width, height);
             elapsed = steady_clock::now() - startTime;
             session.checkAnswer(2, std::to_string(res2));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
