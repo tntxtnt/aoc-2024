@@ -15,15 +15,15 @@ namespace views = std::views;
 const std::array<std::pair<int, int>, 4> neightborDiffs{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
 const std::array<std::pair<int, int>, 8> neightborDiffs2{
     {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}}};
-constexpr std::string spaceChar = " ";
-constexpr std::string borderChar = ".";
-constexpr std::string horiBorderChar = "─";
-constexpr std::string vertBorderChar = "│";
-constexpr std::string topLeftCornerChar = "┌";
-constexpr std::string topRightCornerChar = "┐";
-constexpr std::string bottomLeftCornerChar = "└";
-constexpr std::string bottomRightCornerChar = "┘";
-constexpr std::string doubleCornerChar = "┼";
+constexpr const char* spaceChar = " ";
+constexpr const char* borderChar = ".";
+constexpr const char* horiBorderChar = "─";
+constexpr const char* vertBorderChar = "│";
+constexpr const char* topLeftCornerChar = "┌";
+constexpr const char* topRightCornerChar = "┐";
+constexpr const char* bottomLeftCornerChar = "└";
+constexpr const char* bottomRightCornerChar = "┘";
+constexpr const char* doubleCornerChar = "┼";
 
 static auto isBorderChar(std::string_view ch) {
     return ch == borderChar || ch == horiBorderChar || ch == vertBorderChar || ch == topLeftCornerChar ||

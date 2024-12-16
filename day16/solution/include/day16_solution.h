@@ -2,7 +2,7 @@
 
 #include <istream>
 
-class Day1Solution {
+class Day16Solution {
 public:
     using Part1ResultType = int;
     using Part2ResultType = int;
