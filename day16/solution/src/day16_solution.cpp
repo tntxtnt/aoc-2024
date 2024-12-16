@@ -158,17 +158,18 @@ auto Day16Solution::part2(std::istream& inputStream) -> Part2ResultType {
         auto [curr, weight] = wcurr;
         minPQ.pop();
         if (minCost[curr] < weight) continue;
+        minCost[curr] = weight;
+        if (weight > endCost) break;
+        parents[curr].push_back(from);
         if (map.isEndAt(curr.coord)) {
-            if (weight > endCost) break;
             endCost = weight;
             endQ.push(curr);
+        } else {
+            curr.forEachNeighbor([&](DirectedCoord2i next, int cost) {
+                if (!map.isWallAt(next.coord) && minCost[next] >= weight + cost)
+                    minPQ.emplace(WeightedDirectedCoord2i{.dCoord = next, .weight = weight + cost}, curr);
+            });
         }
-        minCost[curr] = weight;
-        parents[curr].push_back(from);
-        curr.forEachNeighbor([&](DirectedCoord2i next, int cost) {
-            if (!map.isWallAt(next.coord))
-                minPQ.emplace(WeightedDirectedCoord2i{.dCoord = next, .weight = weight + cost}, curr);
-        });
     }
     DirectedCoord2iMap<char> traced(map.rows(), map.cols(), 0);
     while (!endQ.empty()) {
