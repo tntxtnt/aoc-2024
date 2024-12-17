@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <queue>
+#include <limits>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -24,26 +25,15 @@ constexpr int goStraigtCost = 1;
 constexpr int makeTurnCost = 1001;
 
 struct Coord2i {
-    int row{};
-    int col{};
-    Coord2i() = default;
-    Coord2i(int row, int col) : row{row}, col{col} {}
-    auto operator+=(const Coord2i& rhs) -> Coord2i& {
-        row += rhs.row;
-        col += rhs.col;
-        return *this;
-    }
-    auto operator+(const Coord2i& rhs) const -> Coord2i { return {row + rhs.row, col + rhs.col}; }
-    auto operator==(const Coord2i& rhs) const -> bool { return row == rhs.row && col == rhs.col; }
-    auto operator!=(const Coord2i& rhs) const -> bool { return !(*this == rhs); }
+    int row;
+    int col;
 };
 
 struct DirectedCoord2i {
     Coord2i coord;
-    char dir{};
-    auto operator==(const DirectedCoord2i& rhs) const -> bool { return dir == rhs.dir && coord == rhs.coord; }
+    char dir;
     template <class Function>
-    void forEachNeighbor(Function&& func) {
+    void forEachNeighbor(Function&& func) const {
         if (dir == faceUpChar) {
             std::forward<Function>(func)(DirectedCoord2i{.coord = {coord.row - 1, coord.col}, .dir = faceUpChar},
                                          goStraigtCost);
@@ -76,18 +66,6 @@ struct DirectedCoord2i {
     }
 };
 
-struct WeightedDirectedCoord2i {
-    DirectedCoord2i dCoord;
-    int weight{};
-    auto operator<(const WeightedDirectedCoord2i& rhs) const -> bool { return weight > rhs.weight; }
-};
-
-struct TracedWeightedDirectedCoord2i {
-    WeightedDirectedCoord2i wdCoord;
-    DirectedCoord2i from{};
-    auto operator<(const TracedWeightedDirectedCoord2i& rhs) const -> bool { return wdCoord < rhs.wdCoord; }
-};
-
 struct Map2 {
     std::vector<std::string> data;
     auto operator[](const Coord2i& pos) const -> char { return data[pos.row][pos.col]; };
@@ -117,60 +95,127 @@ struct DirectedCoord2iMap {
     DirectedCoord2iMap(int rows, int cols, const ValueType& initValue)
     : rows{rows}, cols{cols}, data(rows * cols * 4, initValue) {}
     auto operator[](const DirectedCoord2i& dCoord) -> ValueType& {
-        const auto& [coord, dir] = dCoord;
-        const auto& [row, col] = coord;
-        return data[(row * 4 * cols) + (col * 4) + directionToInt(dir)];
+        return data[(dCoord.coord.row * 4 * cols) + (dCoord.coord.col * 4) + directionToInt(dCoord.dir)];
+    }
+    auto operator[](const DirectedCoord2i& dCoord) const -> ValueType {
+        return data[(dCoord.coord.row * 4 * cols) + (dCoord.coord.col * 4) + directionToInt(dCoord.dir)];
+    }
+};
+
+template <class T>
+concept HasDirectedCoord2i = requires(T obj) {
+    { obj.dCoord } -> std::convertible_to<DirectedCoord2i>;
+};
+
+template <class T>
+concept DirectedCoord2iHistory = requires(T obj) {
+    { obj.hasVisited(DirectedCoord2i{}, int{}) } -> std::convertible_to<bool>;
+    { obj.markVisited(DirectedCoord2i{}, int{}) };
+};
+
+template <class T, DirectedCoord2iHistory History>
+    requires HasDirectedCoord2i<T> || std::is_convertible_v<T, DirectedCoord2i>
+struct DirectedCoord2iMinHeap {
+    struct WeightedT {
+        T dCoord;
+        int weight;
+        auto operator>(const WeightedT& rhs) const { return weight > rhs.weight; }
+    };
+    std::priority_queue<WeightedT, std::vector<WeightedT>, std::greater<>> minPQ;
+    History history;
+
+    explicit DirectedCoord2iMinHeap(const Map2& map) : history(map.rows(), map.cols()) {}
+
+    void update(T&& dCoord, int weight) {
+        if (!history.hasVisited(getDirectedCoord2i(dCoord), weight)) minPQ.emplace(std::move(dCoord), weight);
+    }
+
+    template <class Function>
+    auto forEach(Function&& func) -> bool {
+        while (!minPQ.empty()) {
+            auto [dCoord, weight] = std::move(minPQ.top());
+            minPQ.pop();
+            if (history.hasVisited(getDirectedCoord2i(dCoord), weight)) continue;
+            history.markVisited(getDirectedCoord2i(dCoord), weight);
+            if (!std::forward<Function>(func)(dCoord, weight)) return false;
+        }
+        return true;
+    }
+
+private:
+    auto getDirectedCoord2i(const T& dCoord) -> DirectedCoord2i {
+        if constexpr (std::is_convertible_v<T, DirectedCoord2i>) {
+            return dCoord;
+        } else {
+            return dCoord.dCoord;
+        }
     }
 };
 
 auto Day16Solution::part1(std::istream& inputStream) -> Part1ResultType {
     Map2 map{ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(inputStream))};
+    struct Visited {
+        DirectedCoord2iMap<char> data;
+        Visited(int rows, int cols) : data(rows, cols, 0) {}
+        auto hasVisited(const DirectedCoord2i& dCoord, int /*unused*/) const -> bool { return data[dCoord] == 1; }
+        void markVisited(const DirectedCoord2i& dCoord, int /*unused*/) { data[dCoord] = 1; }
+    };
+    DirectedCoord2iMinHeap<DirectedCoord2i, Visited> minHeap(map);
     // S is at bottom left corner, facing right
-    std::priority_queue<WeightedDirectedCoord2i> minPQ;
-    minPQ.emplace(DirectedCoord2i{.coord = {map.rows() - 2, 1}, .dir = faceRightChar}, 0);
-    DirectedCoord2iMap<char> visited(map.rows(), map.cols(), 0);
-    while (!minPQ.empty()) {
-        auto [curr, weight] = minPQ.top();
-        minPQ.pop();
-        if (visited[curr] == 1) continue;
-        visited[curr] = 1;
-        if (map.isEndAt(curr.coord)) return weight;
-        curr.forEachNeighbor([&](const DirectedCoord2i& next, int cost) {
-            if (!map.isWallAt(next.coord) && visited[next] != 1) minPQ.emplace(next, weight + cost);
+    minHeap.update(DirectedCoord2i{.coord = {map.rows() - 2, 1}, .dir = faceRightChar}, 0);
+    // Dijkstra
+    Part1ResultType endCost{INT_MAX};
+    minHeap.forEach([&](const DirectedCoord2i& curr, int weight) -> bool {
+        if (map.isEndAt(curr.coord)) {
+            endCost = weight;
+            return false;
+        }
+        curr.forEachNeighbor([&](DirectedCoord2i&& next, int cost) {
+            if (!map.isWallAt(next.coord)) minHeap.update(std::move(next), weight + cost);
         });
-    }
-    return -1;
+        return true;
+    });
+    return endCost;
 }
+
+struct TrackedDirectedCoord2i {
+    DirectedCoord2i dCoord;
+    DirectedCoord2i from;
+};
 
 auto Day16Solution::part2(std::istream& inputStream) -> Part2ResultType {
     Map2 map{ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(inputStream))};
+    struct Visited {
+        DirectedCoord2iMap<int> data;
+        Visited(int rows, int cols) : data(rows, cols, INT_MAX) {}
+        auto hasVisited(const DirectedCoord2i& dCoord, int weight) const -> bool { return data[dCoord] < weight; }
+        void markVisited(const DirectedCoord2i& dCoord, int weight) { data[dCoord] = weight; }
+    };
+    DirectedCoord2iMinHeap<TrackedDirectedCoord2i, Visited> minHeap(map);
     // S is at bottom left corner, facing right
-    std::priority_queue<TracedWeightedDirectedCoord2i> minPQ;
-    minPQ.emplace(WeightedDirectedCoord2i{.dCoord = DirectedCoord2i{.coord = {map.rows() - 2, 1}, .dir = faceRightChar},
-                                          .weight = 0},
-                  DirectedCoord2i{.coord = {-1, -1}, .dir = '?'});
-    DirectedCoord2iMap<int> minCost(map.rows(), map.cols(), INT_MAX);
+    minHeap.update(TrackedDirectedCoord2i{.dCoord = {.coord = {map.rows() - 2, 1}, .dir = faceRightChar},
+                                          .from = {.coord = {-1, -1}, .dir = '?'}},
+                   0);
+    // Dijkstra with tracking
     DirectedCoord2iMap<std::vector<DirectedCoord2i>> parents(map.rows(), map.cols(), {});
     int endCost{INT_MAX};
     std::queue<DirectedCoord2i> endQ;
-    while (!minPQ.empty()) {
-        auto [wcurr, from] = minPQ.top();
-        auto [curr, weight] = wcurr;
-        minPQ.pop();
-        if (minCost[curr] < weight) continue;
-        minCost[curr] = weight;
-        if (weight > endCost) break;
+    minHeap.forEach([&](const TrackedDirectedCoord2i& tdCoord, int weight) -> bool {
+        const auto& [curr, from] = tdCoord;
+        if (weight > endCost) return false;
         parents[curr].push_back(from);
         if (map.isEndAt(curr.coord)) {
             endCost = weight;
             endQ.push(curr);
         } else {
             curr.forEachNeighbor([&](DirectedCoord2i next, int cost) {
-                if (!map.isWallAt(next.coord) && minCost[next] >= weight + cost)
-                    minPQ.emplace(WeightedDirectedCoord2i{.dCoord = next, .weight = weight + cost}, curr);
+                if (!map.isWallAt(next.coord))
+                    minHeap.update(TrackedDirectedCoord2i{.dCoord = next, .from = curr}, weight + cost);
             });
         }
-    }
+        return true;
+    });
+    // Backtrack
     DirectedCoord2iMap<char> traced(map.rows(), map.cols(), 0);
     while (!endQ.empty()) {
         auto curr = endQ.front();
