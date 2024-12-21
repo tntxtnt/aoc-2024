@@ -36,6 +36,19 @@ TEST_CASE("day21 - part 1") {
     REQUIRE(res == ans);
 }
 
+TEST_CASE("day21 - part 2") {
+    std::istringstream iss{R"(029A
+980A
+179A
+456A
+379A
+)"};
+    const Day21Solution::Part2ResultType ans{154115708116294};
+    Day21Solution sol;
+    const auto res = sol.part2(iss);
+    REQUIRE(res == ans);
+}
+
 int main(int argc, char** argv) {
     using namespace std::chrono;
     setVirtualTerminal();
@@ -55,13 +68,13 @@ int main(int argc, char** argv) {
             session.checkAnswer(1, aoc::toString(res1));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
 
-            /*ifs.clear();
+            ifs.clear();
             ifs.seekg(0);
             startTime = steady_clock::now();
             const auto res2 = sol.part2(ifs);
             elapsed = steady_clock::now() - startTime;
             session.checkAnswer(2, aoc::toString(res2));
-            aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));*/
+            aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
         } else {
             aoc::perror("Input file doesn't exists or can't be read");
             returnCode = 1;
