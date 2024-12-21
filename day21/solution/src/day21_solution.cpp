@@ -5,6 +5,7 @@
 #include <array>
 #include <algorithm>
 #include <optional>
+#include <unordered_map>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -39,18 +40,6 @@ static auto getPaths_(const Coord2i& fromPos, const Coord2i& toPos,
     return res;
 }
 
-static auto getPaths_(std::string_view input,
-                      std::vector<std::string> (*getPaths)(char, char)) -> std::vector<std::string> {
-    if (input.size() == 2) return getPaths(input[0], input[1]);
-    const auto heads = getPaths(input[0], input[1]);
-    const auto tails = getPaths_(input.substr(1), getPaths);
-    return ranges::to<std::vector>(views::cartesian_product(heads, tails) |
-                                   views::transform([](const auto& tup) -> std::string {
-                                       const auto& [head, tail] = tup;
-                                       return head + tail;
-                                   }));
-}
-
 namespace directional
 {
     constexpr static inline Coord2i invalidPos{0, 0};
@@ -70,24 +59,6 @@ namespace directional
     static auto getPaths(char from, char to) -> std::vector<std::string> {
         return getPaths_(getPos(from), getPos(to), invalidPos);
     }
-    static auto getPaths(std::string_view input) -> std::vector<std::string> {
-        return getPaths_(input, getPaths);
-    }
-    static auto getNextMinPath(char from, char to) -> std::string {
-        std::vector<std::string> candidates;
-        std::string res;
-        size_t minLen{std::numeric_limits<size_t>::max()};
-        for (const auto& path : getPaths(from, to)) {
-            size_t shortestLen{std::numeric_limits<size_t>::max()};
-            for (const auto& path2 : getPaths('A' + path))
-                for (const auto& path3 : getPaths('A' + path2)) shortestLen = std::min(shortestLen, path3.size());
-            if (shortestLen <= minLen) { // must be <=
-                minLen = shortestLen;
-                res = path;
-            }
-        }
-        return res;
-    }
 }; // namespace directional
 
 namespace numeric
@@ -101,90 +72,34 @@ namespace numeric
     static auto getPaths(char from, char to) -> std::vector<std::string> {
         return getPaths_(getPos(from), getPos(to), invalidPos);
     }
-    static auto getPaths(std::string_view input) -> std::vector<std::string> {
-        return getPaths_(input, getPaths);
-    }
-    static auto getNextMinPath(char from, char to) -> std::string {
-        std::string res;
-        size_t minLen{std::numeric_limits<size_t>::max()};
-        for (const auto& path : getPaths(from, to)) {
-            size_t shortestLen{std::numeric_limits<size_t>::max()};
-            for (const auto& path2 : directional::getPaths('A' + path))
-                for (const auto& path3 : directional::getPaths('A' + path2))
-                    shortestLen = std::min(shortestLen, path3.size());
-            if (shortestLen <= minLen) { // must be <=
-                minLen = shortestLen;
-                res = path;
-            }
-        }
-        return res;
-    }
 }; // namespace numeric
 } // namespace keypad
 
 auto Day21Solution::part1(std::istream& inputStream) -> Part1ResultType {
-    Part1ResultType res{};
-    for (std::string input : views::istream<LineWrapper>(inputStream)) {
-        std::optional<std::string> shortestPath;
-        aoc::println("{}({})", input, input.size());
-        for (const auto& path1 : keypad::numeric::getPaths('A' + input)) {
-            // aoc::println("  {}({})", path1, path1.size());
-            for (const auto& path2 : keypad::directional::getPaths('A' + path1)) {
-                // aoc::println("    {}({})", path2, path2.size());
-                for (const auto& path3 : keypad::directional::getPaths('A' + path2)) {
-                    // aoc::println("      {}({})", path3, path3.size());
-                    if (!shortestPath || path3.size() < shortestPath->size()) {
-                        if (shortestPath) aoc::println("----- {}({})", *shortestPath, shortestPath->size());
-                        shortestPath = path3;
-                    }
-                }
-            }
-        }
-        if (!shortestPath) return -1;
-        aoc::println("      {}({})", *shortestPath, shortestPath->size());
-        res += (int)shortestPath->size() * std::stoi(input);
-    }
-    return res;
+    return (Part1ResultType)part2(inputStream, 2);
 }
 
-struct Path {
-    long long data[128][128]{};
-    template <class Func>
-    constexpr void forEachNonEmptyCell(Func&& func) {
-        for (int from = 0; from < 128; ++from)
-            for (int to = 0; to < 128; ++to)
-                if (data[from][to] > 0)
-                    if constexpr (requires(Func f) { f(0LL); }) {
-                        std::forward<Func>(func)(data[from][to]);
-                    } else if constexpr (requires(Func f) { f(0, 0, 0LL); }) {
-                        std::forward<Func>(func)(from, to, data[from][to]);
-                    }
-    }
-};
-
-auto Day21Solution::part2(std::istream& inputStream) -> Part2ResultType {
-    using namespace std::literals;
-    Part2ResultType res{};
-    std::string map[128][128]{};
-    for (char from : "^v<>A"sv)
-        for (char to : "^v<>A"sv) map[from][to] = keypad::directional::getNextMinPath(from, to);
-    for (char from : "0123456789A"sv)
-        for (char to : "0123456789A"sv) map[from][to] = keypad::numeric::getNextMinPath(from, to);
-    for (std::string input : views::istream<LineWrapper>(inputStream)) {
-        Path path;
-        auto genNext = [](std::string_view path, long long cnt, Path& out) {
-            out.data['A'][path[0]] += cnt;
-            for (auto [from, to] : views::adjacent<2>(path)) out.data[from][to] += cnt;
-        };
-        genNext(input, 1, path);
-        for (int repeat = 26; repeat-- > 0;) {
-            Path nextPath;
-            path.forEachNonEmptyCell([&](int from, int to, long long cnt) { genNext(map[from][to], cnt, nextPath); });
-            path = nextPath;
+auto Day21Solution::part2(std::istream& inputStream, int repeat) -> Part2ResultType {
+    std::unordered_map<std::string, std::vector<Part2ResultType>> cache;
+    auto dfs = [&](this auto&& dfs, const std::string& input, int level, bool isDirectional) -> Part2ResultType {
+        if (cache[input].empty()) cache[input].resize(repeat + 1, -1);
+        if (cache[input][level] != -1) return cache[input][level];
+        Part2ResultType res{};
+        for (auto [from, to] : views::adjacent<2>('A' + input)) {
+            const auto paths =
+                isDirectional ? keypad::directional::getPaths(from, to) : keypad::numeric::getPaths(from, to);
+            if (level == 0) {
+                res += ranges::min_element(paths, std::less{}, [](std::string_view sv) { return sv.size(); })->size();
+            } else {
+                Part2ResultType minLen{std::numeric_limits<Part2ResultType>::max()};
+                for (auto& path : paths) minLen = std::min(minLen, dfs(path, level - 1, true));
+                res += minLen;
+            }
         }
-        long long len{};
-        path.forEachNonEmptyCell([&](long long cnt) { len += cnt; });
-        res += len * std::stoi(input);
-    }
+        return cache[input][level] = res;
+    };
+    Part2ResultType res{};
+    for (std::string input : views::istream<LineWrapper>(inputStream))
+        res += dfs(input, repeat, false) * std::stoi(input);
     return res;
 }

@@ -8,7 +8,7 @@ public:
     using Part2ResultType = long long;
 
     auto part1(std::istream& inputStream) -> Part1ResultType;
-    auto part2(std::istream& inputStream) -> Part2ResultType;
+    auto part2(std::istream& inputStream, int repeat) -> Part2ResultType;
 
 private:
 };

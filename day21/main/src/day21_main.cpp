@@ -37,16 +37,30 @@ TEST_CASE("day21 - part 1") {
 }
 
 TEST_CASE("day21 - part 2") {
-    std::istringstream iss{R"(029A
+    SUBCASE("repeat 2 times") {
+        std::istringstream iss{R"(029A
 980A
 179A
 456A
 379A
 )"};
-    const Day21Solution::Part2ResultType ans{154115708116294};
-    Day21Solution sol;
-    const auto res = sol.part2(iss);
-    REQUIRE(res == ans);
+        const Day21Solution::Part2ResultType ans{126384};
+        Day21Solution sol;
+        const auto res = sol.part2(iss, 2);
+        REQUIRE(res == ans);
+    }
+    SUBCASE("repeat 25 times") {
+        std::istringstream iss{R"(029A
+980A
+179A
+456A
+379A
+)"};
+        const Day21Solution::Part2ResultType ans{154115708116294};
+        Day21Solution sol;
+        const auto res = sol.part2(iss, 25);
+        REQUIRE(res == ans);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -71,7 +85,7 @@ int main(int argc, char** argv) {
             ifs.clear();
             ifs.seekg(0);
             startTime = steady_clock::now();
-            const auto res2 = sol.part2(ifs);
+            const auto res2 = sol.part2(ifs, 25);
             elapsed = steady_clock::now() - startTime;
             session.checkAnswer(2, aoc::toString(res2));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
