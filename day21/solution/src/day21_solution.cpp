@@ -74,7 +74,7 @@ namespace numeric
 } // namespace keypad
 
 auto Day21Solution::part1(std::istream& inputStream) -> Part1ResultType {
-    return (Part1ResultType)part2(inputStream, 2);
+    return (Part1ResultType)part2(inputStream, 3);
 }
 
 auto Day21Solution::part2(std::istream& inputStream, int repeat) -> Part2ResultType {
@@ -82,17 +82,15 @@ auto Day21Solution::part2(std::istream& inputStream, int repeat) -> Part2ResultT
     auto dfs = [&](this auto&& dfs, const std::string& input, int level, bool isDirectional) -> Part2ResultType {
         if (cache[input].empty()) cache[input].resize(repeat + 1, -1);
         if (cache[input][level] != -1) return cache[input][level];
+        if (level == 0) return input.size();
         Part2ResultType res{};
         for (auto [from, to] : views::adjacent<2>('A' + input))
             res += ranges::min((isDirectional ? keypad::directional::getPaths : keypad::numeric::getPaths)(from, to) |
-                               views::transform([&](const auto& path) -> Part2ResultType {
-                                   return level == 0 ? path.size() : dfs(path, level - 1, true);
-                               }));
+                               views::transform([&](const auto& path) { return dfs(path, level - 1, true); }));
         return cache[input][level] = res;
     };
-    return ranges::fold_left(views::istream<LineWrapper>(inputStream) |
-                                 views::transform([&](std::string input) -> Part2ResultType {
-                                     return dfs(input, repeat, false) * std::stoi(input);
-                                 }),
-                             0LL, std::plus{});
+    Part2ResultType res{};
+    for (std::string input : views::istream<LineWrapper>(inputStream))
+        res += dfs(input, repeat, false) * std::stoi(input);
+    return res;
 }

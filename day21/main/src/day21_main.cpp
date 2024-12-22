@@ -46,7 +46,7 @@ TEST_CASE("day21 - part 2") {
 )"};
         const Day21Solution::Part2ResultType ans{126384};
         Day21Solution sol;
-        const auto res = sol.part2(iss, 2);
+        const auto res = sol.part2(iss, 3);
         REQUIRE(res == ans);
     }
     SUBCASE("repeat 25 times") {
@@ -58,7 +58,7 @@ TEST_CASE("day21 - part 2") {
 )"};
         const Day21Solution::Part2ResultType ans{154115708116294};
         Day21Solution sol;
-        const auto res = sol.part2(iss, 25);
+        const auto res = sol.part2(iss, 26);
         REQUIRE(res == ans);
     }
 }
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
             ifs.clear();
             ifs.seekg(0);
             startTime = steady_clock::now();
-            const auto res2 = sol.part2(ifs, 25);
+            const auto res2 = sol.part2(ifs, 26);
             elapsed = steady_clock::now() - startTime;
             session.checkAnswer(2, aoc::toString(res2));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
