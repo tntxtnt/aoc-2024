@@ -34,7 +34,7 @@ static auto getPaths_(const Coord2i& fromPos, const Coord2i& toPos,
             }))
             res.push_back(path + 'A');
 
-    } while (std::next_permutation(begin(path), end(path)));
+    } while (ranges::next_permutation(path).found);
     return res;
 }
 
@@ -83,21 +83,16 @@ auto Day21Solution::part2(std::istream& inputStream, int repeat) -> Part2ResultT
         if (cache[input].empty()) cache[input].resize(repeat + 1, -1);
         if (cache[input][level] != -1) return cache[input][level];
         Part2ResultType res{};
-        for (auto [from, to] : views::adjacent<2>('A' + input)) {
-            const auto paths =
-                isDirectional ? keypad::directional::getPaths(from, to) : keypad::numeric::getPaths(from, to);
-            if (level == 0) {
-                res += ranges::min_element(paths, std::less{}, [](std::string_view sv) { return sv.size(); })->size();
-            } else {
-                Part2ResultType minLen{std::numeric_limits<Part2ResultType>::max()};
-                for (auto& path : paths) minLen = std::min(minLen, dfs(path, level - 1, true));
-                res += minLen;
-            }
-        }
+        for (auto [from, to] : views::adjacent<2>('A' + input))
+            res += ranges::min((isDirectional ? keypad::directional::getPaths : keypad::numeric::getPaths)(from, to) |
+                               views::transform([&](const auto& path) -> Part2ResultType {
+                                   return level == 0 ? path.size() : dfs(path, level - 1, true);
+                               }));
         return cache[input][level] = res;
     };
-    Part2ResultType res{};
-    for (std::string input : views::istream<LineWrapper>(inputStream))
-        res += dfs(input, repeat, false) * std::stoi(input);
-    return res;
+    return ranges::fold_left(views::istream<LineWrapper>(inputStream) |
+                                 views::transform([&](std::string input) -> Part2ResultType {
+                                     return dfs(input, repeat, false) * std::stoi(input);
+                                 }),
+                             0LL, std::plus{});
 }

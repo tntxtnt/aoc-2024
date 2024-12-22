@@ -11,7 +11,6 @@ namespace views = std::views;
 
 constexpr char emptyChar = '.';
 constexpr char wallChar = '#';
-constexpr char shortestPathChar = 'O';
 constexpr char visitedChar = 'x';
 
 struct Coord2i {
