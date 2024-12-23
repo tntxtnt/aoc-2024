@@ -19,7 +19,8 @@
     },
     "implot",
     "lodepng",
+    "nowide",
     "opengl",
-    "nowide"
+    "eigen3"
   ]
 }

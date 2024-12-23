@@ -5,9 +5,12 @@ add_library(${LIB}
 )
 target_include_directories(${LIB} PUBLIC include)
 
+find_package(Eigen3 CONFIG REQUIRED)
+
 target_link_libraries(${LIB}
     PRIVATE
         AdventOfCode::Utils
+        Eigen3::Eigen
 )
 
 # Enable sanitizers
