@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <array>
 #include <unordered_set>
 #include <unordered_map>
 #include <ranges>
@@ -49,14 +48,12 @@ inline void hash_combine(size_t& seed, const T& v) {
 
 struct Clique {
     const std::vector<std::vector<bool>>& adj;
-    std::vector<int> candidates;
+    std::vector<int> validCandidates;
     std::vector<int> verts;
 
-    Clique(int vt1, int vt2, const std::vector<int>& candies, const std::vector<std::vector<bool>>& adjMat)
-    : adj{adjMat}, candidates{}, verts{vt1, vt2} {
-        ranges::sort(verts);
-        ranges::copy_if(candies, std::back_inserter(candidates),
-                        [&](int vert) { return adj[vert][vt1] && adj[vert][vt2]; });
+    Clique(int vert, const std::vector<int>& candidates, const std::vector<std::vector<bool>>& adjMat)
+    : adj{adjMat}, validCandidates{}, verts{vert} {
+        ranges::copy_if(candidates, std::back_inserter(validCandidates), [&](int cand) { return adj[cand][vert]; });
     }
     auto operator==(const Clique& rhs) const { return verts == rhs.verts; }
     auto to_string() const -> std::string {
@@ -64,7 +61,7 @@ struct Clique {
     }
     template <class Func>
     void forEachLargerBy1Clique(Func&& func) const {
-        for (int newVert : candidates) std::forward<Func>(func)(*this + newVert);
+        for (int cand : validCandidates) std::forward<Func>(func)(*this + cand);
     }
 
 private:
@@ -78,9 +75,10 @@ private:
         res.verts.push_back(newVert);
         ranges::copy(verts | views::drop(res.verts.size() - 1), std::back_inserter(res.verts));
         // candidates
-        size_t newCandidatesSize = ranges::count_if(candidates, [&](int vert) { return adj[vert][newVert]; });
-        res.candidates.reserve(newCandidatesSize);
-        ranges::copy_if(candidates, std::back_inserter(res.candidates), [&](int vert) { return adj[vert][newVert]; });
+        size_t newCandidatesSize = ranges::count_if(validCandidates, [&](int vert) { return adj[vert][newVert]; });
+        res.validCandidates.reserve(newCandidatesSize);
+        ranges::copy_if(validCandidates, std::back_inserter(res.validCandidates),
+                        [&](int cand) { return adj[cand][newVert]; });
         return res;
     }
 };
@@ -95,14 +93,12 @@ struct CliqueHash {
 auto Day23Solution::part2(std::istream& inputStream) -> Part2ResultType {
     std::vector<std::vector<bool>> adjMat(26 * 26, std::vector<bool>(26 * 26, false));
     std::vector<int> vertices;
-    std::vector<std::pair<int, int>> edges;
     for (std::string lhs, rhs; std::getline(inputStream, lhs, '-') && std::getline(inputStream, rhs);) {
         const int vt1 = toInt(lhs);
         const int vt2 = toInt(rhs);
         adjMat[vt1][vt2] = adjMat[vt2][vt1] = true;
         vertices.push_back(vt1);
         vertices.push_back(vt2);
-        edges.emplace_back(vt1, vt2);
     }
     ranges::sort(vertices);
     {
@@ -111,8 +107,12 @@ auto Day23Solution::part2(std::istream& inputStream) -> Part2ResultType {
     }
 
     std::unordered_set<Clique, CliqueHash> cliques;
-    for (auto [vt1, vt2] : edges) cliques.emplace(vt1, vt2, vertices, adjMat);
+    for (auto vert : vertices) cliques.emplace(vert, vertices, adjMat);
+    const int sizePerStar = (int)cliques.size();
     while (true) {
+        aoc::println("{:2d}: {}{}", begin(cliques)->verts.size(),
+                     fmt::styled(std::string(cliques.size() / sizePerStar, '*'), fmt::fg(fmt::color::cyan)),
+                     cliques.size());
         decltype(cliques) nextCliques;
         for (const auto& cliq : cliques)
             cliq.forEachLargerBy1Clique([&](Clique newClique) { nextCliques.insert(std::move(newClique)); });
