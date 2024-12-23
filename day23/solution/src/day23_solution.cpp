@@ -3,10 +3,8 @@
 #include <vector>
 #include <string>
 #include <array>
-#include <set>
 #include <unordered_set>
 #include <unordered_map>
-#include <stack>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -33,44 +31,93 @@ auto Day23Solution::part1(std::istream& inputStream) -> Part1ResultType {
     return res / 3;
 }
 
+auto toInt(std::string_view str) -> int {
+    return (str[0] - 'a') * 26 + str[1] - 'a';
+};
+
+auto fromInt(int num) -> std::string {
+    std::string res(2, '\0');
+    res[0] = (char)(num / 26 + 'a');
+    res[1] = (char)(num % 26 + 'a');
+    return res;
+};
+
+template <class T>
+inline void hash_combine(size_t& seed, const T& v) {
+    seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+struct Clique {
+    const std::vector<std::vector<bool>>& adj;
+    std::vector<int> candidates;
+    std::vector<int> verts;
+
+    Clique(int vt1, int vt2, const std::vector<int>& candies, const std::vector<std::vector<bool>>& adjMat)
+    : adj{adjMat}, candidates{}, verts{vt1, vt2} {
+        ranges::sort(verts);
+        ranges::copy_if(candies, std::back_inserter(candidates),
+                        [&](int vert) { return adj[vert][vt1] && adj[vert][vt2]; });
+    }
+    auto operator==(const Clique& rhs) const { return verts == rhs.verts; }
+    auto to_string() const -> std::string {
+        return ranges::to<std::string>(verts | views::transform(fromInt) | views::join_with(','));
+    }
+    template <class Func>
+    void forEachLargerBy1Clique(Func&& func) const {
+        for (int newVert : candidates) std::forward<Func>(func)(*this + newVert);
+    }
+
+private:
+    Clique(const std::vector<std::vector<bool>>& adjMat) : adj{adjMat} {}
+    auto operator+(int newVert) const -> Clique {
+        Clique res{adj};
+        // verts
+        res.verts.reserve(verts.size() + 1);
+        ranges::copy(verts | views::take_while([=](int vert) { return vert < newVert; }),
+                     std::back_inserter(res.verts));
+        res.verts.push_back(newVert);
+        ranges::copy(verts | views::drop(res.verts.size() - 1), std::back_inserter(res.verts));
+        // candidates
+        size_t newCandidatesSize = ranges::count_if(candidates, [&](int vert) { return adj[vert][newVert]; });
+        res.candidates.reserve(newCandidatesSize);
+        ranges::copy_if(candidates, std::back_inserter(res.candidates), [&](int vert) { return adj[vert][newVert]; });
+        return res;
+    }
+};
+struct CliqueHash {
+    auto operator()(const Clique& cliq) const -> size_t {
+        size_t res{};
+        for (int num : cliq.verts) hash_combine(res, num);
+        return res;
+    }
+};
+
 auto Day23Solution::part2(std::istream& inputStream) -> Part2ResultType {
-    auto toInt = [](std::string_view str) -> int { return (str[0] - 'a') * 26 + str[1] - 'a'; };
     std::vector<std::vector<bool>> adjMat(26 * 26, std::vector<bool>(26 * 26, false));
-    std::vector<std::string> vertices;
-    std::unordered_set<std::string> cliques;
+    std::vector<int> vertices;
+    std::vector<std::pair<int, int>> edges;
     for (std::string lhs, rhs; std::getline(inputStream, lhs, '-') && std::getline(inputStream, rhs);) {
-        adjMat[toInt(lhs)][toInt(rhs)] = adjMat[toInt(rhs)][toInt(lhs)] = true;
-        vertices.push_back(lhs);
-        vertices.push_back(rhs);
-        if (lhs > rhs) std::swap(lhs, rhs);
-        cliques.insert(lhs + rhs);
+        const int vt1 = toInt(lhs);
+        const int vt2 = toInt(rhs);
+        adjMat[vt1][vt2] = adjMat[vt2][vt1] = true;
+        vertices.push_back(vt1);
+        vertices.push_back(vt2);
+        edges.emplace_back(vt1, vt2);
     }
     ranges::sort(vertices);
     {
         const auto ret = ranges::unique(vertices);
         vertices.erase(begin(ret), end(ret));
     }
-    auto toCliquesVec = [](const std::string& cliq) -> std::vector<std::string> {
-        return ranges::to<std::vector>(views::iota(0) | views::stride(2) | views::take(cliq.size() / 2) |
-                                       views::transform([&](int i) -> std::string { return cliq.substr(i, 2); }));
-    };
+
+    std::unordered_set<Clique, CliqueHash> cliques;
+    for (auto [vt1, vt2] : edges) cliques.emplace(vt1, vt2, vertices, adjMat);
     while (true) {
-        std::unordered_set<std::string> nextCliques;
-        for (const auto& cliq : cliques) {
-            const auto cliquesVec = toCliquesVec(cliq);
-            std::vector<std::string> diff;
-            ranges::set_difference(vertices, cliquesVec, std::back_inserter(diff));
-            for (const auto& vert : diff)
-                if (ranges::all_of(cliquesVec, [&](const auto& uert) { return adjMat[toInt(vert)][toInt(uert)]; })) {
-                    std::set<std::string> newCliqSet(begin(cliquesVec), end(cliquesVec));
-                    newCliqSet.insert(vert);
-                    std::string newCliq = ranges::to<std::string>(newCliqSet | views::join);
-                    nextCliques.insert(newCliq);
-                }
-        }
+        decltype(cliques) nextCliques;
+        for (const auto& cliq : cliques)
+            cliq.forEachLargerBy1Clique([&](Clique newClique) { nextCliques.insert(std::move(newClique)); });
         if (nextCliques.empty()) break;
         cliques.swap(nextCliques);
     }
-    const auto cliquesVec = toCliquesVec(*begin(cliques));
-    return ranges::to<std::string>(cliquesVec | views::join_with(','));
+    return begin(cliques)->to_string();
 }
