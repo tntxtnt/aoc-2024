@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
             startTime = steady_clock::now();
             const auto res2 = sol.part2(ifs);
             elapsed = steady_clock::now() - startTime;
-            // session.checkAnswer(2, aoc::toString(res2));
+            session.checkAnswer(2, aoc::toString(res2));
             aoc::println("Solve time: {}", fmt::styled(elapsed, fg(fmt::color::spring_green)));
         } else {
             aoc::perror("Input file doesn't exists or can't be read");

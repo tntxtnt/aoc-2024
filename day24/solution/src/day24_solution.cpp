@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <functional>
 #include <stack>
-#include <queue>
 #include <ranges>
 namespace ranges = std::ranges;
 namespace views = std::views;
@@ -48,34 +47,46 @@ struct LogicGate {
     };
 };
 
-auto Day24Solution::part1(std::istream& inputStream) -> Part1ResultType {
-    std::unordered_map<std::string, LogicGate> map;
-    std::unordered_map<std::string, std::vector<std::pair<std::string, bool>>> out;
-    std::stack<std::string> stack;
-    for (std::string line : views::istream<LineWrapper>(inputStream)) {
+using Gates = std::unordered_map<std::string, LogicGate>;
+using Wirings = std::unordered_map<std::string, std::vector<std::pair<std::string, bool>>>;
+
+auto parseGatesAndWirings(const std::vector<std::string>& lines) -> std::pair<Gates, Wirings> {
+    Gates gates;
+    Wirings wirings;
+    for (const auto& line : lines) {
         if (line.empty()) break;
         std::string gateName = line.substr(0, 3);
-        map[gateName] = line.back() == '1' ? LogicGate::TrueGate() : LogicGate::FalseGate();
-        stack.push(gateName);
+        gates[gateName] = line.back() == '1' ? LogicGate::TrueGate() : LogicGate::FalseGate();
     }
-    for (std::string in1Name, in2Name, opName, outName, ignore;
-         inputStream >> in1Name >> opName >> in2Name >> ignore >> outName;) {
-        out[in1Name].emplace_back(outName, false);
-        out[in2Name].emplace_back(outName, true);
-        map[outName] = opName == "OR"    ? LogicGate::OrGate()
-                       : opName == "XOR" ? LogicGate::XorGate()
-                                         : LogicGate::AndGate();
+    for (const auto& line : lines) {
+        std::istringstream iss{line};
+        std::string in1Name, in2Name, opName, outName, ignore;
+        iss >> in1Name >> opName >> in2Name >> ignore >> outName;
+        wirings[in1Name].emplace_back(outName, false);
+        wirings[in2Name].emplace_back(outName, true);
+        gates[outName] = opName == "OR"    ? LogicGate::OrGate()
+                         : opName == "XOR" ? LogicGate::XorGate()
+                                           : LogicGate::AndGate();
     }
+    return {gates, wirings};
+}
+
+auto Day24Solution::part1(std::istream& inputStream) -> Part1ResultType {
+    auto [gates, wirings] =
+        parseGatesAndWirings(ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(inputStream)));
+    std::stack<std::string> stack;
+    for (auto& [gateName, gate] : gates)
+        if (gate.typeName == "TRUE" || gate.typeName == "FALSE") stack.push(gateName);
     while (!stack.empty()) {
         const auto curr = std::move(stack.top());
         stack.pop();
-        for (const auto& [next, nextIsRhs] : out[curr]) {
-            (nextIsRhs ? map[next].input2 : map[next].input1) = map[curr].output();
-            stack.push(next);
+        for (const auto& [next, nextIsRhs] : wirings[curr]) {
+            (nextIsRhs ? gates[next].input2 : gates[next].input1) = gates[curr].output();
+            if (gates[next].output() != Tribool::Indetermined) stack.push(next);
         }
     }
     Part1ResultType res{};
-    for (auto& [gateName, gate] : map)
+    for (auto& [gateName, gate] : gates)
         if (gateName[0] == 'z') {
             const auto bitIndex = std::stoi(gateName.substr(1));
             const Part1ResultType mask = gate.output() == Tribool::True ? 1ULL << bitIndex : 0;
@@ -84,30 +95,122 @@ auto Day24Solution::part1(std::istream& inputStream) -> Part1ResultType {
     return res;
 }
 
+/*
+CIN X Y | X^Y X&Y  CIN&(X^Y) (CIN&(X^Y))|(X&Y) CIN^(X^Y)
+ 0  0 0 |  0   0      0                 0         0
+ 0  0 1 |  1   0      0                 0         1
+ 0  1 0 |  1   0      0                 0         1
+ 0  1 1 |  0   1      0                 1         0
+ 1  0 0 |  0   0      0                 0         1
+ 1  0 1 |  1   0      1                 1         0
+ 1  1 0 |  1   0      1                 1         0
+ 1  1 1 |  0   1      0                 1         1
+           E   A      S               COUT        Z
+                     C&E               S|A       C^E
+*/
+constexpr unsigned correctCarryOutValue = 0b11101000;
+constexpr unsigned correctZValue = 0b10010110;
+
+auto runAllPossibleValues(int bit, const std::string& cinLabel, std::unordered_map<std::string, LogicGate>& gates,
+                          const std::unordered_map<std::string, std::vector<std::pair<std::string, bool>>>& wirings)
+    -> std::unordered_map<std::string, unsigned char> {
+    const std::string xLabel = fmt::format("x{:02d}", bit);
+    const std::string yLabel = fmt::format("y{:02d}", bit);
+    std::unordered_map<std::string, unsigned char> res;
+    for (unsigned i = 0; i < 8; ++i) {
+        if (res.empty()) {
+            for (auto& [gateName, gate] : gates) gate.input1 = gate.input2 = Tribool::Indetermined;
+        } else {
+            for (auto& [gateName, outputValues] : res)
+                gates[gateName].input1 = gates[gateName].input2 = Tribool::Indetermined;
+        }
+        gates[cinLabel] = (bool)(i & 0b100) ? LogicGate::TrueGate() : LogicGate::FalseGate();
+        gates[xLabel] = (bool)(i & 0b10) ? LogicGate::TrueGate() : LogicGate::FalseGate();
+        gates[yLabel] = (bool)(i & 0b1) ? LogicGate::TrueGate() : LogicGate::FalseGate();
+        std::stack<std::string> stack;
+        stack.push(xLabel);
+        stack.push(yLabel);
+        stack.push(cinLabel);
+        while (!stack.empty()) {
+            const auto curr = std::move(stack.top());
+            stack.pop();
+            if (auto it = wirings.find(curr); it != end(wirings)) {
+                for (const auto& [next, nextIsRhs] : it->second) {
+                    (nextIsRhs ? gates[next].input2 : gates[next].input1) = gates[curr].output();
+                    if (gates[next].output() != Tribool::Indetermined) {
+                        if ((bool)gates[next].output()) res[next] |= 1 << i;
+                        stack.push(next);
+                    }
+                }
+            }
+        }
+    }
+    return res;
+}
+
+void printGraphViz(const Gates& gates, const Wirings& wirings);
+
 auto Day24Solution::part2(std::istream& inputStream) -> Part2ResultType {
-    std::unordered_map<std::string, LogicGate> map;
-    std::unordered_map<std::string, std::vector<std::pair<std::string, bool>>> out;
-    for (std::string line : views::istream<LineWrapper>(inputStream)) {
-        if (line.empty()) break;
-        std::string gateName = line.substr(0, 3);
-        map[gateName] = line.back() == '1' ? LogicGate::TrueGate() : LogicGate::FalseGate();
+    auto lines = ranges::to<std::vector<std::string>>(views::istream<LineWrapper>(inputStream));
+    auto [gates, wirings] = parseGatesAndWirings(lines);
+    std::string carry;
+    for (std::string_view line : lines)
+        if (line.contains("x00") && line.contains("y00") && line.contains("AND")) {
+            carry = line.substr(line.size() - 3);
+            break;
+        }
+    // std::unordered_map<std::string, std::string> newGateNames;
+    std::vector<std::string> swappedGates;
+    for (int i = 1; gates.contains(fmt::format("x{:02d}", i)); ++i) {
+        // newGateNames[carry] = fmt::format("c{:02d}", i);
+        // aoc::println("{} -> {}", carry, newGateNames[carry]);
+        auto changes = runAllPossibleValues(i, carry, gates, wirings);
+        const auto zLabel = fmt::format("z{:02d}", i);
+        if (changes[zLabel] != correctZValue) { // incorrect wiring
+            // Find incorrect pair by brute-forcing 10 choices of pairs from 5 possible gates
+            std::vector<std::string> possibleGates;
+            for (auto& [gateName, outputValues] : changes) possibleGates.push_back(gateName);
+            for (bool found = false; auto [j, gate1Name] : views::enumerate(possibleGates)) {
+                if (found) break;
+                auto it1 = ranges::find_if(lines, [&](std::string_view line) { return line.ends_with(gate1Name); });
+                for (auto [k, gate2Name] : views::enumerate(possibleGates) | views::drop(j + 1)) {
+                    auto it2 = ranges::find_if(lines, [&](std::string_view line) { return line.ends_with(gate2Name); });
+                    std::string oldLine1 = std::exchange(*it1, it1->substr(0, it1->size() - 3) + gate2Name);
+                    std::string oldLine2 = std::exchange(*it2, it2->substr(0, it2->size() - 3) + gate1Name);
+                    std::tie(gates, wirings) = parseGatesAndWirings(lines);
+                    changes = runAllPossibleValues(i, carry, gates, wirings);
+                    if (changes[zLabel] != 0b10010110) { // wrong pair, undo/swap back
+                        *it1 = std::move(oldLine1);
+                        *it2 = std::move(oldLine2);
+                    } else {
+                        // aoc::println("--> Found {} and {}", gate1Name, gate2Name);
+                        swappedGates.push_back(gate1Name);
+                        swappedGates.push_back(gate2Name);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+        for (auto& [gateName, outputValues] : changes)
+            if (outputValues == correctCarryOutValue) {
+                carry = gateName;
+                break;
+            }
     }
-    for (std::string in1Name, in2Name, opName, outName, ignore;
-         inputStream >> in1Name >> opName >> in2Name >> ignore >> outName;) {
-        out[in1Name].emplace_back(outName, false);
-        out[in2Name].emplace_back(outName, true);
-        map[outName] = opName == "OR"    ? LogicGate::OrGate()
-                       : opName == "XOR" ? LogicGate::XorGate()
-                                         : LogicGate::AndGate();
-    }
+    ranges::sort(swappedGates);
+    return ranges::to<std::string>(swappedGates | views::join_with(','));
+}
+
+void printGraphViz(const Gates& gates, const Wirings& wirings) {
     aoc::println("digraph G {");
     aoc::println("  {");
-    for (auto& [key, val] : map) {
+    for (auto& [key, val] : gates) {
         if (key[0] == 'x' || key[0] == 'y') {
             aoc::println("    {} [style=filled fillcolor=grey shape=circle label=\"{}\"]", key, key);
         } else {
             std::string color = val.typeName == "AND" ? "yellow" : val.typeName == "OR" ? "cyan" : "pink";
-            aoc::println("    g{} [style=filled fillcolor={} shape=diamond label=\"{}\"]", key, color, val.typeName); 
+            aoc::println("    g{} [style=filled fillcolor={} shape=diamond label=\"{}\"]", key, color, val.typeName);
             if (key[0] == 'z') {
                 aoc::println("    {} [style=filled fillcolor=green shape=box label=\"{}\"]", key, key);
             } else {
@@ -116,12 +219,11 @@ auto Day24Solution::part2(std::istream& inputStream) -> Part2ResultType {
         }
     }
     aoc::println("  }");
-    for (auto& [key, val] : out) {
-        ranges::sort(val, [](auto& kv1, auto& kv2) { return kv1.second < kv2.second; });
+    for (auto& [key, val] : wirings) {
         for (const auto& [next, nextIsRhs] : val) {
             aoc::println("    {} -> g{}", key, next);
         }
-        if (map[key].typeName != "TRUE" && map[key].typeName != "FALSE") {
+        if (gates.at(key).typeName != "TRUE" && gates.at(key).typeName != "FALSE") {
             aoc::println("    g{} -> {}", key, key);
         }
     }
@@ -148,6 +250,4 @@ X Y CIN    Z COUT   X^Y X&Y  CIN^(X^Y) CIN&(X^Y) (CIN&(X^Y))|(X&Y)
                                 Z                          COUT
     */
     // Search...
-
-    return "";
 }
