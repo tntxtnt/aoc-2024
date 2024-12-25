@@ -56,13 +56,13 @@ auto fromVec(const Vector24b& vec) -> unsigned {
 }
 
 auto pow(Matrix24b mat, size_t exp) -> Matrix24b {
-    auto advance = [&] {
+    auto advance = [](auto& exp, auto& mat) {
         exp >>= 1;
         mat *= mat;
     };
-    while (exp % 2 != 1) advance();
+    while (exp % 2 != 1) advance(exp, mat);
     Matrix24b res = mat;
-    for (advance(); exp > 0; advance())
+    for (advance(exp, mat); exp > 0; advance(exp, mat))
         if (exp % 2 == 1) res *= mat;
     return res;
 }
